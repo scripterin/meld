@@ -1,0 +1,539 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="ro">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MELD</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+              "surface-container-high": "#ebe7e9",
+              "on-secondary-fixed-variant": "#47464f",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed": "#231b02",
+              "surface-bright": "#fcf8fa",
+              "outline": "#78767d",
+              "on-surface": "#1c1b1d",
+              "surface-container-low": "#f6f2f4",
+              "on-tertiary-container": "#493f20",
+              "inverse-surface": "#313032",
+              "on-error": "#ffffff",
+              "tertiary": "#695d3c",
+              "inverse-on-surface": "#f4f0f2",
+              "primary-container": "#1a1a2e",
+              "surface-container": "#f1edef",
+              "inverse-primary": "#c6c4df",
+              "on-tertiary-fixed-variant": "#514627",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "surface-container-highest": "#e5e1e3",
+              "primary-fixed": "#e2e0fc",
+              "on-background": "#1c1b1d",
+              "on-primary-fixed-variant": "#45455b",
+              "on-error-container": "#93000a",
+              "tertiary-fixed-dim": "#d5c59d",
+              "surface-dim": "#ddd9db",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#b9aa83",
+              "primary": "#00000b",
+              "outline-variant": "#c8c5cd",
+              "secondary": "#5e5d68",
+              "tertiary-fixed": "#f2e1b7",
+              "background": "#fcf8fa",
+              "surface-tint": "#5d5c74",
+              "on-secondary-fixed": "#1b1b23",
+              "error-container": "#ffdad6",
+              "on-primary-container": "#83829b",
+              "on-surface-variant": "#47464c",
+              "on-tertiary": "#ffffff",
+              "secondary-fixed-dim": "#c8c5d1",
+              "surface": "#fcf8fa",
+              "secondary-container": "#e1deea",
+              "on-secondary-container": "#63616c",
+              "on-primary-fixed": "#1a1a2e",
+              "secondary-fixed": "#e4e1ed",
+              "surface-variant": "#e5e1e3",
+              "primary-fixed-dim": "#c6c4df"
+            },
+            "borderRadius": {
+              "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+            },
+            "spacing": {
+              "margin-desktop": "32px", "xl": "40px", "md": "16px", "base": "8px",
+              "xs": "4px", "gutter": "16px", "sm": "8px", "margin-mobile": "16px", "lg": "24px"
+            },
+            "fontFamily": {
+              "body-sm": ["Sora"], "h2": ["Sora"], "mono-metric": ["Space Mono"],
+              "body": ["Sora"], "h1": ["Sora"], "label-caps": ["Sora"]
+            },
+            "fontSize": {
+              "body-sm": ["12px", {"lineHeight": "18px", "letterSpacing": "0", "fontWeight": "400"}],
+              "h2": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+              "mono-metric": ["11px", {"lineHeight": "16px", "letterSpacing": "0", "fontWeight": "400"}],
+              "body": ["13px", {"lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400"}],
+              "h1": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "500"}],
+              "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+        body { font-family: 'Sora', sans-serif; background-color: #F7F6F3; overflow: hidden; }
+
+        .canvas-grid {
+            background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            font-size: 18px;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e1e3; border-radius: 10px; }
+
+        /* ── ELEMENT BUTTON in sidebar ── */
+        .element-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            font-family: 'Sora', sans-serif;
+            width: 100%;
+            transition: background 0.12s;
+            user-select: none;
+        }
+        .element-btn:hover { background: #f1edef; }
+        .element-btn .el-emoji { font-size: 20px; line-height: 1; min-width: 26px; text-align: center; }
+        .element-btn .el-name  { font-size: 13px; color: #1c1b1d; line-height: 1.2; }
+        .element-btn .el-tier  {
+            margin-left: auto;
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+        }
+        .tier-basic   { background: #78767d; }
+        .tier-nature  { background: #4caf50; }
+        .tier-earth   { background: #795548; }
+        .tier-life    { background: #e91e63; }
+        .tier-human   { background: #2196f3; }
+        .tier-cosmic  { background: #9c27b0; }
+        .tier-legend  { background: #ff9800; }
+
+        .no-results { padding: 16px 12px; font-size: 12px; color: #78767d; text-align: center; }
+
+        /* ── CANVAS ELEMENT — emoji circle ── */
+        .canvas-element {
+            position: absolute;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1.5px solid #c8c5cd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            user-select: none;
+            z-index: 10;
+            transition: box-shadow 0.15s, border-color 0.15s, transform 0.08s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .canvas-element:hover {
+            border-color: #1a1a2e;
+            box-shadow: 0 2px 12px rgba(26,26,46,0.18);
+            z-index: 20;
+        }
+        .canvas-element.dragging {
+            cursor: grabbing;
+            transform: scale(1.1);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+            z-index: 999;
+            border-color: #1a1a2e;
+        }
+        .canvas-emoji {
+            font-size: 28px;
+            line-height: 1;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        @keyframes pop-in {
+            0%   { opacity: 0; transform: scale(0.3); }
+            70%  { opacity: 1; transform: scale(1.15); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .canvas-element.popping { animation: pop-in 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+        @keyframes shake {
+            0%,100% { transform: translate(0,0) rotate(0deg); }
+            20%     { transform: translate(-4px,-2px) rotate(-4deg); }
+            40%     { transform: translate( 4px, 2px) rotate( 4deg); }
+            60%     { transform: translate(-3px, 3px) rotate(-3deg); }
+            80%     { transform: translate( 3px,-3px) rotate( 3deg); }
+        }
+        .canvas-element.shaking { animation: shake 0.3s ease-in-out; }
+
+        @keyframes particle-fly {
+            0%   { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2); }
+        }
+        .ws-particle {
+            position: absolute;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 500;
+            animation: particle-fly 0.7s ease-out forwards;
+        }
+
+        /* ── DISCOVERY OVERLAY ── */
+        #discovery-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(6px);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+        #discovery-overlay.open { display: flex; }
+
+        .disc-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 52px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+            animation: card-in 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes card-in {
+            from { opacity: 0; transform: scale(0.6) translateY(30px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .disc-badge {
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #1a1a2e;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .disc-big-emoji { font-size: 80px; line-height: 1; margin: 8px 0 18px; }
+        .disc-name { font-size: 26px; font-weight: 700; color: #1c1b1d; margin-bottom: 8px; font-family: 'Sora', sans-serif; }
+        .disc-desc { font-size: 13px; color: #63616c; margin-bottom: 28px; line-height: 1.6; }
+        .disc-btn {
+            padding: 11px 36px;
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-size: 13px;
+            font-family: 'Sora', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.15s;
+            letter-spacing: 0.5px;
+        }
+        .disc-btn:hover { opacity: 0.85; transform: scale(1.03); }
+
+        @keyframes confetti-fly {
+            0%   { opacity: 1; transform: translate(0,0) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translate(var(--dx),var(--dy)) scale(0.2) rotate(180deg); }
+        }
+        .confetti-p {
+            position: absolute;
+            font-size: 18px;
+            pointer-events: none;
+            animation: confetti-fly 1s ease-out forwards;
+        }
+
+        /* ── ENCYCLOPEDIA MODAL ── */
+        #encyclopedia-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            z-index: 8000;
+            align-items: center;
+            justify-content: center;
+        }
+        #encyclopedia-modal.open { display: flex; }
+
+        .enc-window {
+            background: #fff;
+            width: 620px;
+            max-width: 96vw;
+            height: 520px;
+            max-height: 90vh;
+            border-radius: 16px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: card-in 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        .enc-top-bar {
+            background: #f6f2f4;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e5e1e3;
+            flex-shrink: 0;
+        }
+        .enc-tabs-row { display: flex; gap: 4px; }
+        .enc-tab-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            font-family: 'Sora', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: #63616c;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        .enc-tab-btn:hover { color: #1c1b1d; background: #ebe7e9; }
+        .enc-tab-btn.active { color: #1c1b1d; border-bottom-color: #1a1a2e; font-weight: 700; }
+        .enc-tab-btn .material-symbols-outlined { font-size: 17px; }
+
+        .enc-close-btn {
+            background: none; border: none; cursor: pointer; padding: 4px 8px;
+            color: #78767d; font-size: 20px; transition: color 0.15s; border-radius: 6px;
+        }
+        .enc-close-btn:hover { color: #1c1b1d; background: #ebe7e9; }
+
+        .enc-body { flex: 1; overflow-y: auto; padding: 20px; background: #fcf8fa; }
+        .enc-body::-webkit-scrollbar { width: 4px; }
+        .enc-body::-webkit-scrollbar-thumb { background: #e5e1e3; border-radius: 4px; }
+
+        /* HOME tab */
+        .enc-home-wrap {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100%; text-align: center; gap: 20px;
+        }
+        .enc-home-icon {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, #1a1a2e, #3d3d7a);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(26,26,46,0.25);
+        }
+        .enc-home-icon .material-symbols-outlined { font-size: 38px; color: #fff; }
+        .enc-big-stat { font-size: 40px; font-weight: 800; color: #1c1b1d; font-family: 'Sora', sans-serif; }
+        .enc-stat-sub { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #63616c; font-weight: 600; margin-top: 2px; }
+        .enc-prog-track {
+            width: 280px; height: 10px; background: #e5e1e3;
+            border-radius: 999px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .enc-prog-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a1a2e, #5d5c74);
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+        .enc-prog-label { font-size: 12px; color: #63616c; font-weight: 600; margin-top: 6px; }
+
+        /* ITEMS tab */
+        .enc-section-title {
+            font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+            color: #78767d; font-weight: 600; margin-bottom: 12px;
+        }
+        .enc-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+        }
+        .enc-item-card {
+            border-radius: 12px;
+            border: 1.5px solid #e5e1e3;
+            padding: 12px 6px 10px;
+            text-align: center;
+            background: #fff;
+            transition: border-color 0.12s, transform 0.1s;
+        }
+        .enc-item-card.found { cursor: pointer; }
+        .enc-item-card.found:hover { border-color: #1a1a2e; transform: scale(1.04); }
+        .enc-item-card.locked { opacity: 0.4; background: #f6f2f4; }
+        .enc-item-emoji { font-size: 26px; margin-bottom: 5px; }
+        .enc-item-name  { font-size: 10px; color: #1c1b1d; line-height: 1.3; font-weight: 500; }
+        .enc-item-desc  { font-size: 9px; color: #78767d; margin-top: 2px; line-height: 1.3; display: none; }
+        .enc-item-card.found:hover .enc-item-desc { display: block; }
+
+        /* TOAST */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(8px);
+            background: #1a1a2e;
+            color: #fff;
+            padding: 9px 22px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-family: 'Sora', sans-serif;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 9999;
+            letter-spacing: 0.3px;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body class="text-on-surface bg-background">
+<div class="flex h-screen w-full overflow-hidden relative">
+
+    <!-- ══ SIDEBAR ══ -->
+    <aside class="w-[220px] h-full bg-white border-r border-outline-variant flex flex-col z-20">
+        <div class="p-md pt-lg flex flex-col gap-md">
+<div class="flex items-center gap-3">
+
+    <!-- Back -->
+    <a class="text-on-surface-variant hover:text-on-surface transition-colors" href="home.html">
+        <span class="material-symbols-outlined text-[20px]">
+            arrow_back
+        </span>
+    </a>
+
+    <!-- Logo -->
+    <img
+        src="Meld.png"
+        alt="MELD Logo"
+        class="w-11 h-11 object-contain rounded-xl"
+    />
+
+    <!-- Text -->
+    <div class="flex flex-col leading-none">
+
+        <span class="text-[18px] font-bold tracking-tight text-on-primary-fixed">
+            MELD
+        </span>
+
+    </div>
+
+</div>
+            <!-- SEARCH — fixed with proper id -->
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">search</span>
+                <input
+                    id="search-input"
+                    class="w-full h-10 bg-surface-container-low rounded-lg pl-10 pr-4 text-body border border-outline-variant focus:outline-none focus:ring-1 focus:ring-outline transition-all placeholder:text-on-secondary-container"
+                    placeholder="Caută elemente..."
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+            </div>
+        </div>
+
+        <!-- ELEMENTS LIST -->
+        <nav class="flex-1 overflow-y-auto custom-scrollbar px-sm py-xs">
+            <div id="elements-list" class="flex flex-col gap-[2px]"></div>
+        </nav>
+
+        <!-- PROGRESS FOOTER -->
+        <div class="p-md border-t border-outline-variant bg-white flex-shrink-0">
+            <div class="flex justify-between items-center mb-xs">
+                <span class="text-label-caps font-label-caps text-on-secondary-container text-[10px] tracking-widest uppercase" id="discovered-counter">4 / 0 ELEMENTE</span>
+                <span class="text-mono-metric text-on-surface-variant font-mono text-[11px]" id="progress-label">0%</span>
+            </div>
+            <div class="w-full h-1 bg-surface-container rounded-full overflow-hidden">
+                <div id="progress-bar" class="h-full bg-primary-container transition-all duration-300" style="width:0%"></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ══ MAIN CANVAS ══ -->
+    <main class="flex-1 h-full relative canvas-grid flex flex-col z-10">
+
+        <!-- Header bar -->
+        <header class="h-16 w-full flex justify-between items-center px-lg z-10 bg-white/60 backdrop-blur-sm border-b border-outline-variant/40">
+            <h2 class="text-label-caps font-label-caps text-on-secondary-container tracking-widest">TABLĂ DE LUCRU</h2>
+            <div class="flex items-center gap-md">
+                <!-- Encyclopedia button -->
+                <button id="enc-btn" class="flex items-center gap-sm px-md py-2 bg-primary-container text-white rounded-lg hover:opacity-90 active:scale-95 transition-all group">
+                    <span class="material-symbols-outlined text-[20px] text-yellow-400 group-hover:rotate-12 transition-transform">menu_book</span>
+                    <span class="text-label-caps font-label-caps tracking-wider">ENCICLOPEDIE</span>
+                </button>
+                <!-- Clear board -->
+                <button id="clear-btn" class="flex items-center gap-sm px-md py-2 hover:bg-white/70 rounded-lg transition-all text-on-surface-variant hover:text-error group">
+                    <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">delete</span>
+                    <span class="text-label-caps font-label-caps">CURĂȚĂ TABLA</span>
+                </button>
+                <!-- Hints button -->
+                 <button id="hint-btn" class="flex items-center gap-sm px-md py-2 bg-surface-container-high text-on-surface rounded-lg hover:bg-surface-container-highest transition-all active:scale-95">
+                   <span class="material-symbols-outlined text-[20px]">lightbulb</span>
+                   <span class="text-label-caps font-label-caps">INDICIU</span>
+                </button>
+
+            </div>
+        </header>
+
+        <!-- Workspace -->
+        <div class="flex-1 relative overflow-hidden" id="workspace">
+            <div id="workspace-hint" class="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none opacity-30">
+                <span style="font-size:40px">⚗️</span>
+                <span class="text-label-caps font-label-caps text-on-secondary-container tracking-widest">TRAGE ELEMENTE PE TABLĂ</span>
+            </div>
+        </div>
+    </main>
+
+</div><!-- /flex -->
+
+<!-- ══ TOAST ══ -->
+<div id="toast"></div>
+
+<!-- ══ DISCOVERY OVERLAY ══ -->
+<div id="discovery-overlay">
+    <div class="disc-card">
+        <div class="disc-badge">✦ Element Nou Descoperit ✦</div>
+        <div class="disc-big-emoji" id="disc-emoji">✨</div>
+        <div class="disc-name" id="disc-name"></div>
+        <div class="disc-desc" id="disc-desc"></div>
+        <button class="disc-btn" id="disc-continue-btn">Continuă ✦</button>
+    </div>
+</div>
+
+<!-- ══ ENCYCLOPEDIA MODAL ══ -->
+<div id="encyclopedia-modal">
+    <div class="enc-window">
+        <!-- Top bar with tabs -->
+        <div class="enc-top-bar">
+            <div class="enc-tabs-row">
+                <button class="enc-tab-btn active" data-enc-tab="home">
+                    <span class="material-symbols-outlined">home</span> Home
+                </button>
+                <button class="enc-tab-btn" data-enc-tab="items">
+                    <span class="material-symbols-outlined">auto_awesome</span> Items
+                </button>
+            </div>
+            <button class="enc-close-btn" id="enc-close-btn">✕</button>
+        </div>
+        <!-- Body -->
+        <div class="enc-body" id="enc-body"></div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
