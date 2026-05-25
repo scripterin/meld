@@ -226,6 +226,7 @@ const RECIPES = [
 ['pheasant', 'wormwood', 'luca'],
 ['human', 'motor', 'vali'],
 ['human', 'car', 'vali'],
+]; 
 
 // Build lookup
 const RECIPE_MAP = {};
