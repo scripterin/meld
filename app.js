@@ -99,6 +99,9 @@ const ALL_ELEMENTS = [
 { id: 'wormwood', name: 'Pelin', emoji: '🌿', tier: 'nature', desc: 'Plantă amară' },
 { id: 'motor', name: 'Motor', emoji: '🏍️', tier: 'human', desc: 'Putere mecanică' },
 { id: 'car', name: 'Mașină', emoji: '🚗', tier: 'human', desc: 'Viteză pe roți' },
+{ id: 'damian', name: 'Damian', emoji: '⚽', tier: 'legend', desc: 'Fotbalistul pasionat' },
+{ id: 'luca',   name: 'Luca',   emoji: '🐝', tier: 'legend', desc: 'Prietenul cu fazanii și albinele' },
+{ id: 'vali',   name: 'Vali',   emoji: '🏍️', tier: 'legend', desc: 'Omul cu motorul' },
 ];
 
 // ============================================================
