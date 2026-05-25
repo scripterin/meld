@@ -88,6 +88,8 @@ const ALL_ELEMENTS = [
   { id: 'magic',       name: 'Magie',        emoji: '🪄', tier: 'legend',  desc: 'Energie cosmică controlată de om' },
   { id: 'myth',        name: 'Mit',          emoji: '📖', tier: 'legend',  desc: 'Povești cu zei și eroi' },
   { id: 'deity',       name: 'Zeitate',      emoji: '✨', tier: 'legend',  desc: 'Ființă supremă transcendentă' },
+  { id: 'sport',    name: 'Sport',   emoji: '🏅', tier: 'human', desc: 'Competiție organizată' },
+  { id: 'flower',   name: 'Floare',  emoji: '🌸', tier: 'nature', desc: 'Planta înflorită' }, 
   // PERSONAJE SECRETE
 { id: 'real_madrid', name: 'Real Madrid', emoji: '⚽', tier: 'human', desc: 'Clubul regal' },
 { id: 'football', name: 'Fotbal', emoji: '⚽', tier: 'human', desc: 'Sportul rege' },
@@ -195,20 +197,35 @@ const RECIPES = [
   ['energy','myth','magic'],
   ['human','deity','philosophy'],
   ['magic','human','wizard'],
-  // Damian
-  ['human', 'football', 'damian'],
-  ['human', 'real_madrid', 'damian'],
-  ['football', 'injury', 'damian'],
-  
-  // Luca
-  ['bees', 'pheasant', 'luca'],
-  ['wormwood', 'bees', 'luca'],
-  ['pheasant', 'wormwood', 'luca'],
-  
-  // Vali
-  ['human', 'motor', 'vali'],
-  ['human', 'car', 'vali'],
-];
+// Ingrediente pentru personaje custom
+['human', 'plant', 'wormwood'],
+['bird', 'forest', 'pheasant'],
+['flower', 'tree', 'wormwood'],
+['plant', 'water', 'wormwood'],
+['stone', 'metal', 'motor'],
+['metal', 'energy', 'motor'],
+['motor', 'metal', 'car'],
+['motor', 'stone', 'car'],
+['human', 'sport', 'football'],
+['human', 'energy', 'football'],
+['city', 'sport', 'real_madrid'],
+['football', 'star', 'real_madrid'],
+['human', 'weapon', 'injury'],
+['sport', 'weapon', 'injury'],
+['football', 'human', 'injury'],
+['plant', 'rain', 'flower'],
+['plant', 'sun', 'flower'],
+['human', 'grass', 'sport'],
+['human', 'city', 'sport'],
+// Personaje
+['human', 'football', 'damian'],
+['human', 'real_madrid', 'damian'],
+['football', 'injury', 'damian'],
+['bees', 'pheasant', 'luca'],
+['wormwood', 'bees', 'luca'],
+['pheasant', 'wormwood', 'luca'],
+['human', 'motor', 'vali'],
+['human', 'car', 'vali'],
 
 // Build lookup
 const RECIPE_MAP = {};
@@ -669,9 +686,12 @@ function enableDragging(el) {
   window.addEventListener('mouseup',   mu);
 
   el.addEventListener('touchstart', e => { e.preventDefault(); start(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
-  const tm = e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); };
-  const te = () => end();
-  window.addEventListener('touchmove', tm, { passive: false });
+const tm = e => {
+    if (!active || dragTarget !== el) return; // nu bloca daca nu tragem
+    e.preventDefault();
+    move(e.touches[0].clientX, e.touches[0].clientY);
+};  const te = () => end();
+  window.addEventListener('touchmove', tm, { passive: false, capture: false });
   window.addEventListener('touchend',  te);
 
   el._cleanup = () => {
@@ -1152,94 +1172,353 @@ function loadStarterElements() {
 })();
 
 // ============================================================
-// --- SISTEM HINT & ENCYCLOPEDIA ---
+// SISTEM INDICIU — modern, fara repetitii, fara combinatii deja facute
 // ============================================================
 
-// Variabilă pentru cooldown-ul de 30 secunde
-let hintCooldown = 0;
+let hintCooldownTimer  = null;
+let hintCooldownLeft   = 0;
+let hintUsedThisSession = new Set(); // combinatii deja sugerate in sesiunea curenta
 
-// 1. Logica Indiciu: Caută doar combinații posibile cu ce ai deja
-document.getElementById('hint-btn')?.addEventListener('click', () => {
-    // Verificăm cooldown-ul
-    if (hintCooldown > 0) {
-        showToast(`Indiciu indisponibil. Așteaptă ${hintCooldown}s.`);
-        return;
-    }
+function getHint() {
+  const btn = document.getElementById('hint-btn');
 
-    const discovered = getDiscoveredIds();
-    const allRecipes = [...RECIPES, ...SECRET_RECIPES];
-    
-    // Filtram rețetele unde deții ambele ingrediente, dar nu ai rezultatul
-    const possibleRecipes = allRecipes.filter(r => {
-        const [el1_id, el2_id, result_id] = r;
-        return discovered.includes(el1_id) && discovered.includes(el2_id) && !discovered.includes(result_id);
-    });
+  // Daca e pe cooldown
+  if (hintCooldownLeft > 0) {
+    showHintCooldownToast(hintCooldownLeft);
+    shakeHintBtn();
+    return;
+  }
 
-    if (possibleRecipes.length > 0) {
-        const randomRecipe = possibleRecipes[Math.floor(Math.random() * possibleRecipes.length)];
-        const [el1_id, el2_id, result_id] = randomRecipe;
-        
-        const allElementsList = [...ALL_ELEMENTS, ...SECRET_ELEMENTS];
-        const el1 = allElementsList.find(e => e.id === el1_id);
-        const el2 = allElementsList.find(e => e.id === el2_id);
+  const discovered     = new Set(state.discovered);
+  const allRecipes     = [...RECIPES, ...SECRET_RECIPES];
 
-        showToast(`Indiciu: Combină "${el1.name}" cu "${el2.name}"!`);
-        
-        // Activăm cooldown-ul
-        hintCooldown = 60;
-        const interval = setInterval(() => {
-            hintCooldown--;
-            if (hintCooldown <= 0) clearInterval(interval);
-        }, 1000);
+  // Filtreaza: ambele ingrediente descoperite, rezultatul NEdescoperit, combinatia NEsugerate inca
+  const possible = allRecipes.filter(([a, b, result]) => {
+    const key = [a, b].sort().join('+');
+    return (
+      discovered.has(a) &&
+      discovered.has(b) &&
+      !discovered.has(result) &&
+      !hintUsedThisSession.has(key)
+    );
+  });
+
+  if (possible.length === 0) {
+    // Daca am epuizat toate sugestiile, resetam sesiunea
+    if (hintUsedThisSession.size > 0) {
+      hintUsedThisSession.clear();
+      showHintModal(null, 'reset');
     } else {
-        showToast("Nu există rețete noi posibile cu ce ai pe tablă. Mai experimentează!");
+      showHintModal(null, 'empty');
     }
-});
+    return;
+  }
 
-// 2. Inițializare Enciclopedie
-function initEncyclopedia() {
-    const encBtn = document.getElementById('enc-btn');
-    const encCloseBtn = document.getElementById('enc-close-btn');
-    const encModal = document.getElementById('encyclopedia-modal');
+  // Alege random una din posibile
+  const pick = possible[Math.floor(Math.random() * possible.length)];
+  const [a, b, result] = pick;
+  const key = [a, b].sort().join('+');
 
-    encBtn?.addEventListener('click', () => {
-        if (typeof openEncyclopedia === 'function') openEncyclopedia('home');
-        else { encModal.classList.add('open'); renderEncyclopedia('home'); }
-    });
+  // Marcheaza ca folosita
+  hintUsedThisSession.add(key);
 
-    encCloseBtn?.addEventListener('click', () => {
-        if (typeof closeEncyclopedia === 'function') closeEncyclopedia();
-        else encModal.classList.remove('open');
-    });
-    
-    encModal?.addEventListener('click', e => {
-        if (e.target.id === 'encyclopedia-modal') {
-            typeof closeEncyclopedia === 'function' ? closeEncyclopedia() : encModal.classList.remove('open');
-        }
-    });
+  const elA = getElement(a);
+  const elB = getElement(b);
+  const elR = getElement(result);
 
-    document.querySelectorAll('[data-enc-tab]').forEach(tab => {
-        tab.addEventListener('click', () => {
-            if (typeof renderEncyclopedia === 'function') renderEncyclopedia(tab.dataset.encTab);
-        });
-    });
+  showHintModal({ elA, elB, elR });
+
+  // Porneste cooldown 45s
+  startHintCooldown(45, btn);
 }
 
-// 3. Helper pentru ID-uri (sigur să existe)
-function getDiscoveredIds() {
-    return state && state.discovered ? Array.from(state.discovered) : [];
+function startHintCooldown(seconds, btn) {
+  hintCooldownLeft = seconds;
+  updateHintBtn(btn, seconds);
+
+  hintCooldownTimer = setInterval(() => {
+    hintCooldownLeft--;
+    updateHintBtn(btn, hintCooldownLeft);
+    if (hintCooldownLeft <= 0) {
+      clearInterval(hintCooldownTimer);
+      hintCooldownTimer = null;
+      resetHintBtn(btn);
+    }
+  }, 1000);
+}
+
+function updateHintBtn(btn, sec) {
+  if (!btn) return;
+  const label = btn.querySelector('.hint-label');
+  if (label) label.textContent = `INDICIU (${sec}s)`;
+  btn.style.opacity = '0.55';
+  btn.style.cursor  = 'not-allowed';
+}
+
+function resetHintBtn(btn) {
+  if (!btn) return;
+  const label = btn.querySelector('.hint-label');
+  if (label) label.textContent = 'INDICIU';
+  btn.style.opacity = '';
+  btn.style.cursor  = '';
+}
+
+function shakeHintBtn() {
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+  btn.style.animation = 'none';
+  requestAnimationFrame(() => {
+    btn.style.animation = 'hint-shake 0.4s ease';
+    setTimeout(() => btn.style.animation = '', 400);
+  });
+}
+
+function showHintCooldownToast(sec) {
+  showToast(`⏳ Indiciu disponibil în ${sec}s`);
+}
+
+// ── MODAL INDICIU ──
+function showHintModal(data, mode = 'hint') {
+  // Sterge modal vechi
+  document.getElementById('hint-modal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'hint-modal';
+  modal.className = 'hint-modal-overlay';
+
+  let inner = '';
+
+  if (mode === 'empty') {
+    inner = `
+      <div class="hint-modal-card">
+        <div class="hint-modal-icon">🔍</div>
+        <div class="hint-modal-title">Nicio combinație nouă</div>
+        <div class="hint-modal-sub">Nu există rețete noi posibile cu elementele pe care le ai.<br>Continuă să explorezi!</div>
+        <button class="hint-modal-close-btn" onclick="document.getElementById('hint-modal').remove()">Închide</button>
+      </div>
+    `;
+  } else if (mode === 'reset') {
+    inner = `
+      <div class="hint-modal-card">
+        <div class="hint-modal-icon">🔄</div>
+        <div class="hint-modal-title">Indicii resetate!</div>
+        <div class="hint-modal-sub">Ai primit toate indiciile posibile. Le reluăm de la început.</div>
+        <button class="hint-modal-close-btn" onclick="document.getElementById('hint-modal').remove()">OK</button>
+      </div>
+    `;
+  } else {
+    const { elA, elB, elR } = data;
+    inner = `
+      <div class="hint-modal-card hint-modal-card--hint">
+        <div class="hint-modal-badge">💡 INDICIU</div>
+        <div class="hint-modal-title">Încearcă această combinație</div>
+        <div class="hint-combo-row">
+          <div class="hint-combo-el">
+            <span class="hint-combo-emoji">${elA.emoji}</span>
+            <span class="hint-combo-name">${elA.name}</span>
+          </div>
+          <span class="hint-combo-plus">+</span>
+          <div class="hint-combo-el">
+            <span class="hint-combo-emoji">${elB.emoji}</span>
+            <span class="hint-combo-name">${elB.name}</span>
+          </div>
+          <span class="hint-combo-arrow">→</span>
+          <div class="hint-combo-el hint-combo-el--result">
+            <span class="hint-combo-emoji">❓</span>
+            <span class="hint-combo-name">???</span>
+          </div>
+        </div>
+        <div class="hint-modal-sub">Rezultatul e o surpriză 🎯</div>
+        <div class="hint-modal-actions">
+          <button class="hint-modal-spawn-btn" onclick="spawnHintElements('${elA.id}','${elB.id}')">
+            <span style="font-size:16px">✦</span> Adaugă pe tablă
+          </button>
+          <button class="hint-modal-close-btn" onclick="document.getElementById('hint-modal').remove()">
+            Închide
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  modal.innerHTML = inner;
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.remove();
+  });
+  document.body.appendChild(modal);
+
+  // Animatie de intrare
+  requestAnimationFrame(() => modal.classList.add('hint-modal-open'));
+}
+
+function spawnHintElements(idA, idB) {
+  document.getElementById('hint-modal')?.remove();
+  const ws = getWorkspace();
+  if (!ws) return;
+  const w = ws.offsetWidth;
+  const h = ws.offsetHeight;
+  spawnElement(idA, w * 0.35, h * 0.4);
+  spawnElement(idB, w * 0.55, h * 0.4);
+}
+
+// ── STILURI HINT MODAL ──
+(function injectHintStyles() {
+  const s = document.createElement('style');
+  s.textContent = `
+    @keyframes hint-shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-5px); }
+      40%     { transform: translateX(5px); }
+      60%     { transform: translateX(-4px); }
+      80%     { transform: translateX(4px); }
+    }
+
+    .hint-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(5px);
+      z-index: 9800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .hint-modal-overlay.hint-modal-open { opacity: 1; }
+
+    .hint-modal-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px 36px;
+      text-align: center;
+      max-width: 400px;
+      width: 92%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      transform: scale(0.9) translateY(12px);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      font-family: 'Sora', sans-serif;
+    }
+    .hint-modal-overlay.hint-modal-open .hint-modal-card {
+      transform: scale(1) translateY(0);
+    }
+    .hint-modal-card--hint {
+      border-top: 4px solid #1a1a2e;
+    }
+
+    .hint-modal-icon  { font-size: 48px; margin-bottom: 10px; }
+    .hint-modal-badge {
+      display: inline-block;
+      background: #f6f2f4;
+      color: #1a1a2e;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    .hint-modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1c1b1d;
+      margin-bottom: 20px;
+    }
+    .hint-modal-sub {
+      font-size: 12px;
+      color: #78767d;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    /* Combinatie row */
+    .hint-combo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #f6f2f4;
+      border-radius: 14px;
+      padding: 16px 12px;
+    }
+    .hint-combo-el {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 56px;
+    }
+    .hint-combo-el--result {
+      opacity: 0.5;
+    }
+    .hint-combo-emoji { font-size: 32px; line-height: 1; }
+    .hint-combo-name  { font-size: 10px; color: #47464c; font-weight: 600; letter-spacing: 0.5px; }
+    .hint-combo-plus  { font-size: 20px; color: #c8c5cd; font-weight: 300; }
+    .hint-combo-arrow { font-size: 18px; color: #c8c5cd; }
+
+    /* Butoane */
+    .hint-modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .hint-modal-spawn-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 12px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .hint-modal-spawn-btn:hover { opacity: 0.85; transform: scale(1.03); }
+    .hint-modal-close-btn {
+      padding: 10px 20px;
+      background: #f6f2f4;
+      color: #47464c;
+      border: none;
+      border-radius: 999px;
+      font-size: 12px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .hint-modal-close-btn:hover { background: #ebe7e9; }
+  `;
+  document.head.appendChild(s);
+})();
+
+// ── INIT HINT BTN ──
+function initHint() {
+  const btn = document.getElementById('hint-btn');
+  if (!btn) return;
+
+  // Inlocuieste textul label-ului cu un span cu clasa ca sa-l putem updata
+  const labelSpan = btn.querySelector('.hint-label') || btn.querySelector('.text-label-caps');
+  if (labelSpan) labelSpan.classList.add('hint-label');
+
+  btn.addEventListener('click', getHint);
 }
 
 // ============================================================
 // BOOT (Păstrează doar acest bloc la finalul fișierului)
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-    loadState();
-    renderSidebar();
-    initSearch();
-    initClearBoard();
-    initEncyclopedia(); 
-    initDiscoveryOverlay();
+  loadState();
+  renderSidebar();
+  initSearch();
+  initClearBoard();
+  initEncyclopedia();
+  initDiscoveryOverlay();
+  initHint();
     
     requestAnimationFrame(() => {
         loadStarterElements();

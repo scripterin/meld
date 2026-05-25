@@ -398,6 +398,21 @@
             letter-spacing: 0.3px;
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── TOUCH SCROLL FIX ── */
+            nav.custom-scrollbar,
+            #elements-list,
+            .enc-body,
+            #enc-body {
+            -webkit-overflow-scrolling: touch;
+             overflow-y: auto;
+             touch-action: pan-y;
+}
+
+/* Prevent body scroll hijack */
+body {
+    overscroll-behavior: none;
+}
     </style>
 </head>
 <body class="text-on-surface bg-background">
@@ -447,7 +462,7 @@
         </div>
 
         <!-- ELEMENTS LIST -->
-        <nav class="flex-1 overflow-y-auto custom-scrollbar px-sm py-xs">
+        <nav class="flex-1 overflow-y-auto custom-scrollbar px-sm py-xs" style="touch-action: pan-y; -webkit-overflow-scrolling: touch;">
             <div id="elements-list" class="flex flex-col gap-[2px]"></div>
         </nav>
 
@@ -483,7 +498,7 @@
                 <!-- Hints button -->
                  <button id="hint-btn" class="flex items-center gap-sm px-md py-2 bg-surface-container-high text-on-surface rounded-lg hover:bg-surface-container-highest transition-all active:scale-95">
                    <span class="material-symbols-outlined text-[20px]">lightbulb</span>
-                   <span class="text-label-caps font-label-caps">INDICIU</span>
+                   <span class="text-label-caps font-label-caps hint-label">INDICIU</span>
                 </button>
 
             </div>
@@ -530,7 +545,7 @@
             <button class="enc-close-btn" id="enc-close-btn">✕</button>
         </div>
         <!-- Body -->
-        <div class="enc-body" id="enc-body"></div>
+        <div class="enc-body" id="enc-body" style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"></div>
     </div>
 </div>
 
